@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.AspNet.Routing.Template
 {
@@ -132,39 +133,49 @@ namespace Microsoft.AspNet.Routing.Template
         {
             context.Mark();
 
+            // Because we encountered an open brace we are here.
+            int openBraces = 1;
+            int closeBraces = 0;
             while (true)
             {
                 if (context.Current == Separator)
                 {
                     // This is a dangling open-brace, which is not allowed
-                    context.Error = Resources.TemplateRoute_MismatchedParameter;
-                    return false;
+                    //context.Error = Resources.TemplateRoute_MismatchedParameter;
+                    //return false;
                 }
                 else if (context.Current == OpenBrace)
                 {
                     // If we see a '{' while parsing a parameter name it's invalid. We'll just accept it for now
                     // and let the validation code for the name find it.
+                    openBraces++;
                 }
                 else if (context.Current == CloseBrace)
                 {
-                    if (!context.Next())
+                    closeBraces++;
+                    if(openBraces == closeBraces)
                     {
-                        // This is the end of the string - and we have a valid parameter
-                        context.Back();
+                        // This is the end of the parameter                        
                         break;
                     }
+                    //if (!context.Next())
+                    //{
+                    //    // This is the end of the string - and we have a valid parameter
+                    //    context.Back();
+                    //    break;
+                    //}
 
-                    if (context.Current == CloseBrace)
-                    {
-                        // This is an 'escaped' brace in a parameter name, which is not allowed.
-                        // We'll just accept it for now and let the validation code for the name find it.
-                    }
-                    else
-                    {
-                        // This is the end of the parameter
-                        context.Back();
-                        break;
-                    }
+                    //if (context.Current == CloseBrace)
+                    //{
+                    //    // This is an 'escaped' brace in a parameter name, which is not allowed.
+                    //    // We'll just accept it for now and let the validation code for the name find it.
+                    //}
+                    //else
+                    //{
+                    //    // This is the end of the parameter
+                    //    context.Back();
+                    //    break;
+                    //}
                 }
 
                 if (!context.Next())
@@ -173,6 +184,12 @@ namespace Microsoft.AspNet.Routing.Template
                     context.Error = Resources.TemplateRoute_MismatchedParameter;
                     return false;
                 }
+            }
+
+            if(openBraces != closeBraces)
+            {
+                context.Error = Resources.TemplateRoute_MismatchedParameter;
+                return false;
             }
 
             var rawParameter = context.Capture();

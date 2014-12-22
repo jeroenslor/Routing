@@ -471,6 +471,32 @@ namespace Microsoft.AspNet.Routing.Template.Tests
             Assert.Equal<RouteTemplate>(expected, actual, new TemplateEqualityComparer());
         }
 
+        [Theory]
+        [InlineData(@"{p1:regex(^\d{3}-\d{3}-\d{4}$)}")] // ssn
+        [InlineData(@"{p1:regex(^(?<proto>\w+)://[/]+?(?<port>:\d+)?/)}")] // protocol and port no
+        [InlineData(@"{p1:regex(^\d{1,2}\/\d{1,2}\/\d{4}$)}")] // date
+        [InlineData(@"{p1:regex(^\w+[\w-\.]*\@\w+((-\w+)|(\w*))\.[a-z]{2,3}$)}")] // email
+        public void Parse_RegularExpressions(string template)
+        {
+            // Arrange
+            var expected = new RouteTemplate(new List<TemplateSegment>());
+            expected.Segments.Add(new TemplateSegment());
+            // InlineConstraint c = new InlineConstraint(@"{p1:regex(^\d{3}-\d{3}-\d{4}$)}");
+            InlineConstraint c = new InlineConstraint(template);
+            expected.Segments[0].Parts.Add(TemplatePart.CreateParameter("p1",
+                                                                        false,
+                                                                        false,
+                                                                        defaultValue: null,
+                                                                        inlineConstraints: null));
+            expected.Parameters.Add(expected.Segments[0].Parts[0]);
+
+            // Act
+            var actual = TemplateParser.Parse(template);
+
+            // Assert
+            Assert.Equal<RouteTemplate>(expected, actual, new TemplateEqualityComparer());
+        }
+
         [Theory]        
         [InlineData("{p1?}.{p2?}")]
         [InlineData("{p1}.{p2?}.{p3}")]
@@ -565,6 +591,7 @@ namespace Microsoft.AspNet.Routing.Template.Tests
         [InlineData("{*a*:int}", "a*")]
         [InlineData("{*a*=5}", "a*")]
         [InlineData("{*a*b=5}", "a*b")]
+        [InlineData("{p1?}.{p2/}/{p3}", "p2/")]
         public void ParseRouteParameter_ThrowsIf_ParameterContainsAsterisk(string template, string parameterName)
         {
             // Arrange

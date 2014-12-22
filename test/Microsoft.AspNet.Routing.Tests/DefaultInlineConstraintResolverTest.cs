@@ -75,6 +75,16 @@ namespace Microsoft.AspNet.Routing.Tests
         }
 
         [Fact]
+        public void ResolveConstraint_RegexInlineConstraint_WithCurlyBraces()
+        {
+            // Arrange & Act
+            var constraint = _constraintResolver.ResolveConstraint(@"regex(\\b(?<month>\\d{1,2})/(?<day>\\d{1,2})/(?<year>\\d{2,4})\\b)");
+
+            // Assert
+            Assert.IsType<RegexInlineRouteConstraint>(constraint);
+        }
+
+        [Fact]
         public void ResolveConstraint_BoolConstraint()
         {
             // Arrange & Act
@@ -296,6 +306,13 @@ namespace Microsoft.AspNet.Routing.Tests
             Assert.Equal("Could not find a constructor for constraint type 'IntRouteConstraint'" +
                          " with the following number of parameters: 2.",
                          ex.Message);
+        }
+
+        [Fact]
+        public void ResolveConstraint_ConstraintContainsSeperator_ReturnsNull()
+        {
+            // Arrange, Act & Assert
+            Assert.Null(_constraintResolver.ResolveConstraint("int/"));
         }
 
         private IInlineConstraintResolver GetInlineConstraintResolver(RouteOptions routeOptions)
